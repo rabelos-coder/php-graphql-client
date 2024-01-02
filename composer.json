@@ -2,21 +2,32 @@
   "name": "rabelos-coder/php-graphql-client",
   "description": "A PHP library that simplifies the process of interacting with GraphQL API's by providing simple client.",
   "type": "library",
-  "require": {
-    "php": ">=8.0",
-    "guzzlehttp/guzzle": "^7.0"
-  },
   "license": "MIT",
-  "autoload": {
-    "psr-4": {
-      "RabelosCoder\\PhpGraphqlClient\\": "src/"
-    }
-  },
+  "keywords": [
+    "graphql",
+    "graph-ql",
+    "client",
+    "php",
+    "query-builder",
+    "query",
+    "builder"
+  ],
   "authors": [
     {
-      "name": "Fabricio Pereira Rabelo",
-      "email": "fabriciojbo@icloud.com"
+      "name": "Rabelo's Coder",
+      "email": "contato@rabeloscoder.com.br"
     }
   ],
+  "require": {
+    "php": ">=8.0",
+    "guzzlehttp/guzzle": "^7.0",
+    "psr/http-message": "^2.0",
+    "psr/http-client": "^1.0"
+  },
+  "autoload": {
+    "psr-4": {
+      "RabelosCoder\\GraphQL\\": "src/"
+    }
+  },
   "minimum-stability": "stable"
 }
