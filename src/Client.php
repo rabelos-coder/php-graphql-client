@@ -163,7 +163,7 @@ class Client
                 $responseData = json_decode($response->getBody()->getContents(), true);
                 return $responseData;
             } catch (RequestException $e) {
-                return $e;
+                throw new Exception($e->getMessage(), $e->getCode(), $e);
             }
         } elseif (is_array($this->body)) {
             try {
@@ -174,7 +174,7 @@ class Client
                 $responseData = json_decode($response->getBody()->getContents(), true);
                 return $responseData;
             } catch (RequestException $e) {
-                return $e;
+                throw new Exception($e->getMessage(), $e->getCode(), $e);
             }
         }
         throw new Exception('Imcompatible body while trying to send request.');
