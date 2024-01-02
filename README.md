@@ -31,7 +31,7 @@ Simple Client:
 
 ```php
 <?php
-$client = new \RabelosCoder\GraphQL('https://your-domain/graphql');
+$client = new \RabelosCoder\GraphQL\Client('https://your-domain/graphql');
 ```
 
 ### Using the GraphQL Client
