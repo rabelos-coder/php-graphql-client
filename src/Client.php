@@ -79,10 +79,12 @@ class Client
         );
         unset($options['headers']);
 
-        $this->options      = $options;
-        $this->endpointUrl  = $endpointUrl;
-        $this->httpClient   = new GuzzleClient($options);
-        $this->httpHeaders  = $httpHeaders;
+        $this->files            = [];
+        $this->fieldIdentifier  = '';
+        $this->options          = $options;
+        $this->endpointUrl      = $endpointUrl;
+        $this->httpClient       = new GuzzleClient($options);
+        $this->httpHeaders      = $httpHeaders;
     }
 
     public function identifier(string $field): self
