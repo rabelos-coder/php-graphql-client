@@ -1,8 +1,8 @@
 # PHP GraphQL Client
 
-[![Latest Version](https://img.shields.io/github/release/softonic/graphql-client.svg?style=flat-square)](https://github.com/rabelos-coder/php-graphql-client/releases)
+[![Latest Version](https://img.shields.io/github/release/rabelos-coder/php-graphql-client.svg?style=flat-square)](https://github.com/rabelos-coder/php-graphql-client/releases)
 [![Software License](https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square)](LICENSE.md)
-[![Total Downloads](https://img.shields.io/packagist/dt/softonic/graphql-client.svg?style=flat-square)](https://packagist.org/packages/rabelos-coder/php-graphql-client)
+[![Total Downloads](https://img.shields.io/packagist/dt/rabelos-coder/php-graphql-client.svg?style=flat-square)](https://packagist.org/packages/rabelos-coder/php-graphql-client)
 
 PHP Client for [GraphQL](http://graphql.org/)
 
