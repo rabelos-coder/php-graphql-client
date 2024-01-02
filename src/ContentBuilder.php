@@ -2,6 +2,8 @@
 
 namespace RabelosCoder\GraphQL;
 
+use Exception;
+
 /**
  * Class ContentBuilder
  *
@@ -12,59 +14,80 @@ class ContentBuilder
     /**
      * @var string
      */
-    protected string $boundary;
-
-    /**
-     * @var array
-     */
-    protected array $fields;
-
-    /**
-     * @var array
-     */
-    protected array $files;
+    protected string $eol;
 
     /**
      * @var string
      */
-    protected string $delimiter = '-------------';
+    protected string $boundary;
 
-    public function __construct(
-        string $boundary,
-        array $fields = [],
-        array $files = []
-    ) {
-        $this->boundary = $boundary;
-        $this->fields = $fields;
-        $this->files = $files;
+    /**
+     * @var string
+     */
+    protected string $delimiter;
+
+    /**
+     * @var string
+     */
+    protected string $files;
+
+    /**
+     * @var string
+     */
+    protected string $body;
+
+    public function __construct()
+    {
+        $this->eol          = "\r\n";
+        $this->files        = '';
+        $this->body         = '';
+        $this->boundary     = uniqid();
+        $this->delimiter    = '-------WebKitFormBoundary' . $this->boundary;
+    }
+
+    public function getDelimiter(): string
+    {
+        return $this->delimiter;
+    }
+
+    public function addFiles(array $files, string $prefix = null): self
+    {
+        if (is_array($files) && count($files)) {
+            foreach ($files as $index => $file) {
+                $name = $file['fileName'];
+                $mimeType = $file['mimeType'];
+                $contents = file_get_contents($file['filePath']);
+                $this->files .= "--" . $this->delimiter . $this->eol
+                . 'Content-Disposition: form-data; name="' . ($prefix ? $prefix : $index) . '"; filename="' . $name . '"' . $this->eol
+                . 'Content-Type: ' . $mimeType . $this->eol
+                . 'Content-Transfer-Encoding: binary' . $this->eol;
+                $this->files .= $this->eol;
+                $this->files .= $contents . $this->eol;
+            }
+        }
+        return $this;
+    }
+
+    public function addFields(array $fields): self
+    {
+        if (is_array($fields) && count($fields)) {
+            foreach ($fields as $name => $content) {
+                $this->body .= "--" . $this->delimiter . $this->eol
+                    . 'Content-Disposition: form-data; name="' . $name . "\"" . $this->eol . $this->eol
+                    . $content . $this->eol;
+            }
+        }
+        return $this;
     }
 
     public function build(): string
     {
-        $data = '';
-        $eol = "\r\n";
-        $this->delimiter = '-------------' . $this->boundary;
-        if (is_array($this->fields) && count($this->fields)) {
-            foreach ($this->fields as $name => $content) {
-                $data .= "--" . $this->delimiter . $eol
-                    . 'Content-Disposition: form-data; name="' . $name . "\"" . $eol . $eol
-                    . $content . $eol;
-            }
+        if (!$this->body) {
+            throw new Exception('Fields not set.');
         }
-        if (is_array($this->files) && count($this->files)) {
-            foreach ($this->files as $index => $file) {
-                $name = $file['fileName'];
-                $mimeType = $file['mimeType'];
-                $contents = file_get_contents($file['filePath']);
-                $data .= "--" . $this->delimiter . $eol
-                    . 'Content-Disposition: form-data; name="' . $index . '"; filename="' . $name . '"' . $eol
-                    . 'Content-Type: ' . $mimeType . $eol
-                    . 'Content-Transfer-Encoding: binary' . $eol;
-                $data .= $eol;
-                $data .= $contents . $eol;
-            }
-        }
-        $data .= "--" . $this->delimiter . "--" . $eol;
-        return $data;
+        // dd($this->body);
+        $this->body .= $this->files;
+        $this->body .= "--" . $this->delimiter . "--";
+        return $this->body;
     }
 }

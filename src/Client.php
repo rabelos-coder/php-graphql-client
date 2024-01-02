@@ -25,6 +25,11 @@ class Client
     protected GuzzleClient $httpClient;
 
     /**
+     * @var ContentBuilder
+     */
+    protected ContentBuilder $builder;
+
+    /**
      * @var array
      */
     protected $httpHeaders;
@@ -35,14 +40,19 @@ class Client
     protected $options;
 
     /**
-     * @var array
+     * @var array|null
      */
     protected $file;
 
     /**
-     * @var array
+     * @var array|null
      */
     protected $files;
+
+    /**
+     * @var int
+     */
+    protected $mapIndex = 0;
 
     /**
      * @var string
@@ -52,12 +62,12 @@ class Client
     /**
      * @var string
      */
-    protected $fieldIdentifier;
+    protected $fileIdentField;
 
     /**
      * @var string
      */
-    protected $boundary;
+    protected $fileIdentFields;
 
     /**
      * @var string|array
@@ -86,25 +96,36 @@ class Client
 
         $this->file             = null;
         $this->files            = null;
-        $this->fieldIdentifier  = '';
+        $this->fileIdentField   = '';
+        $this->fileIdentFields  = '';
         $this->options          = $options;
         $this->endpointUrl      = $endpointUrl;
         $this->httpClient       = new GuzzleClient($options);
         $this->httpHeaders      = $httpHeaders;
+        $this->builder          = new ContentBuilder();
     }
 
-    public function identifier(string $field): self
+    public function fileField(string $field): self
     {
         if (!is_string($field)) {
             throw new Exception('File field identifier must me a string.');
         }
-        $this->fieldIdentifier = "variables." . $field;
+        $this->fileIdentField = "variables." . $field;
         return $this;
     }
 
-    private function validadeFileArguments($file)
+    public function filesField(string $field): self
     {
-        if (empty($this->fieldIdentifier) || !is_string($this->fieldIdentifier)) {
+        if (!is_string($field)) {
+            throw new Exception('File field identifier must me a string.');
+        }
+        $this->fileIdentFields = "variables." . $field;
+        return $this;
+    }
+
+    private function validadeFileArguments($file, $field = null)
+    {
+        if (empty($field) || !is_string($field)) {
             throw new Exception('File field identifier not set.');
         }
         if (!isset($file['fileName']) || (isset($file['fileName']) &&
@@ -128,10 +149,9 @@ class Client
     {
         $map = "";
         if (is_array($file)) {
-            $index = 0;
-            $this->validadeFileArguments($file);
-            $map .= '"' . $index . '": ["' . $this->fieldIdentifier . '"], ';
-            $this->fieldsMap = '{' . substr($map, 0, strlen($map) - 2) . '}';
+            $this->validadeFileArguments($file, $this->fileIdentField);
+            $map .= '"' . preg_replace('/\W+/m', '_', $this->fileIdentField) . '":["' . $this->fileIdentField . '"],';
+            $this->fieldsMap .= $map;
             $this->file = $file;
         } else {
             $this->file = null;
@@ -143,11 +163,12 @@ class Client
     {
         $map = "";
         if (is_array($files) && count($files)) {
-            foreach($files as $index => $file) {
-                $this->validadeFileArguments($file);
-                $map .= '"' . $index . '": ["' . $this->fieldIdentifier . '.' . $index . '"], ';
+            foreach($files as $file) {
+                $this->validadeFileArguments($file, $this->fileIdentFields);
+                $map .= '"' . $this->mapIndex . '":["' . $this->fileIdentFields . '.' . $this->mapIndex . '"],';
+                $this->mapIndex++;
             }
-            $this->fieldsMap = '{' . substr($map, 0, strlen($map) - 2) . '}';
+            $this->fieldsMap .= $map;
             $this->files = $files;
         } else {
             $this->files = null;
@@ -157,22 +178,19 @@ class Client
 
     public function query(string $query, array $variables = [])
     {
-        if (is_array($this->file)) {
+        if (is_array($this->file) || is_array($this->files)) {
+            if (is_array($this->file)) {
+                $this->builder->addFiles([$this->file], preg_replace('/\W+/m', '_', $this->fileIdentField));
+            }
+            if (is_array($this->files)) {
+                $this->builder->addFiles($this->files);
+            }
             $fields = [
                 'operations' => json_encode(['query' => $query, 'variables' => $variables]),
-                'map' => $this->fieldsMap,
+                'map' => '{' . substr($this->fieldsMap, 0, strlen($this->fieldsMap) - 1) . '}',
             ];
-            $this->boundary = uniqid();
-            $builder = new ContentBuilder($this->boundary, $fields, [$this->file]);
-            $this->body = $builder->build();
-        } elseif (is_array($this->files) && count($this->files)) {
-            $fields = [
-                'operations' => json_encode(['query' => $query, 'variables' => $variables]),
-                'map' => $this->fieldsMap,
-            ];
-            $this->boundary = uniqid();
-            $builder = new ContentBuilder($this->boundary, $fields, $this->files);
-            $this->body = $builder->build();
+            $this->builder->addFields($fields);
+            $this->body = $this->builder->build();
         } else {
             $this->body = [
                 'json' => [
@@ -192,9 +210,8 @@ class Client
     public function send()
     {
         if (is_string($this->body)) {
-            $delimiter = '-------------' . $this->boundary;
             $this->httpHeaders = array_merge($this->httpHeaders, [
-                "Content-Type" => 'multipart/form-data; boundary=' . $delimiter,
+                "Content-Type" => 'multipart/form-data; boundary=' . $this->builder->getDelimiter(),
             ]);
             $request = new Request('POST', $this->endpointUrl, $this->httpHeaders, $this->body);
             try {

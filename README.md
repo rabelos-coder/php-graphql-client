@@ -61,11 +61,11 @@ $variables = [
 ];
 
 /** @var \RabelosCoder\GraphQL\Client $client */
-$consumer = $client->query($query, $variables);
+$request = $client->query($query, $variables);
 
 try {
     // returns response array
-    $response = $consumer->send();
+    $response = $request->send();
 
     return $response;
 } catch (\Exception $e) {
@@ -93,11 +93,11 @@ $variables = [
 ];
 
 /** @var \RabelosCoder\GraphQL\Client $client */
-$consumer = $client->query($mutation, $variables);
+$request = $client->query($mutation, $variables);
 
 try {
     // returns response array
-    $response = $consumer->send();
+    $response = $request->send();
 
     return $response;
 } catch (\Exception $e) {
@@ -129,13 +129,13 @@ $variables = [
 ];
 
 /** @var \RabelosCoder\GraphQL\Client $client */
-$consumer = $client->identifier('file')
+$request = $client->fileField('file')
             ->attachment($uploaded)
             ->query($mutation, $variables);
 
 try {
     // returns response array
-    $response = $consumer->send();
+    $response = $request->send();
 
     return $response;
 } catch (\Exception $e) {
@@ -170,13 +170,13 @@ $variables = [
 ];
 
 /** @var \RabelosCoder\GraphQL\Client $client */
-$consumer = $client->identifier('files')
+$request = $client->filesField('files')
             ->attachments($uploaded)
             ->query($mutation, $variables);
 
 try {
     // returns response array
-    $response = $consumer->send();
+    $response = $request->send();
 
     return $response;
 } catch (\Exception $e) {
