@@ -37,6 +37,11 @@ class Client
     /**
      * @var array
      */
+    protected $file;
+
+    /**
+     * @var array
+     */
     protected $files;
 
     /**
@@ -79,7 +84,8 @@ class Client
         );
         unset($options['headers']);
 
-        $this->files            = [];
+        $this->file             = null;
+        $this->files            = null;
         $this->fieldIdentifier  = '';
         $this->options          = $options;
         $this->endpointUrl      = $endpointUrl;
@@ -96,42 +102,70 @@ class Client
         return $this;
     }
 
-    public function attachments(array $files = []): self
+    private function validadeFileArguments($file)
     {
         if (empty($this->fieldIdentifier) || !is_string($this->fieldIdentifier)) {
             throw new Exception('File field identifier not set.');
         }
+        if (!isset($file['fileName']) || (isset($file['fileName']) &&
+        (empty($file['fileName']) || !is_string($file['fileName'])))) {
+            throw new Exception('File name must be a string and it required.');
+        }
+        if (!isset($file['mimeType']) || (isset($file['mimeType']) &&
+        (empty($file['mimeType']) || !is_string($file['mimeType'])))) {
+            throw new Exception('Mime type must be a string and it required.');
+        }
+        if (!isset($file['filePath']) || (isset($file['filePath']) &&
+        (empty($file['filePath']) || !is_string($file['filePath'])))) {
+            throw new Exception('File path must be a string and it required.');
+        }
+        if (!file_exists($file['filePath'])) {
+            throw new Exception('File not found.');
+        }
+    }
+
+    public function attachment($file): self
+    {
+        $map = "";
+        if (is_array($file)) {
+            $index = 0;
+            $this->validadeFileArguments($file);
+            $map .= '"' . $index . '": ["' . $this->fieldIdentifier . '"], ';
+            $this->fieldsMap = '{' . substr($map, 0, strlen($map) - 2) . '}';
+            $this->file = $file;
+        } else {
+            $this->file = null;
+        }
+        return $this;
+    }
+
+    public function attachments(array $files = []): self
+    {
         $map = "";
         if (is_array($files) && count($files)) {
             foreach($files as $index => $file) {
-                if (!isset($file['fileName']) || (isset($file['fileName']) &&
-                (empty($file['fileName']) || !is_string($file['fileName'])))) {
-                    throw new Exception('File name must be a string and it required.');
-                }
-                if (!isset($file['mimeType']) || (isset($file['mimeType']) &&
-                (empty($file['mimeType']) || !is_string($file['mimeType'])))) {
-                    throw new Exception('Mime type must be a string and it required.');
-                }
-                if (!isset($file['filePath']) || (isset($file['filePath']) &&
-                (empty($file['filePath']) || !is_string($file['filePath'])))) {
-                    throw new Exception('File path must be a string and it required.');
-                }
-                if (!file_exists($file['filePath'])) {
-                    throw new Exception('File not found.');
-                }
+                $this->validadeFileArguments($file);
                 $map .= '"' . $index . '": ["' . $this->fieldIdentifier . '.' . $index . '"], ';
             }
             $this->fieldsMap = '{' . substr($map, 0, strlen($map) - 2) . '}';
             $this->files = $files;
         } else {
-            $this->files = [];
+            $this->files = null;
         }
         return $this;
     }
 
     public function query(string $query, array $variables = [])
     {
-        if ((is_array($variables) && count($variables)) && count($this->files)) {
+        if (is_array($this->file)) {
+            $fields = [
+                'operations' => json_encode(['query' => $query, 'variables' => $variables]),
+                'map' => $this->fieldsMap,
+            ];
+            $this->boundary = uniqid();
+            $builder = new ContentBuilder($this->boundary, $fields, [$this->file]);
+            $this->body = $builder->build();
+        } elseif (is_array($this->files) && count($this->files)) {
             $fields = [
                 'operations' => json_encode(['query' => $query, 'variables' => $variables]),
                 'map' => $this->fieldsMap,
@@ -148,6 +182,11 @@ class Client
             ];
         }
         return $this;
+    }
+
+    public function getBody()
+    {
+        return $this->body;
     }
 
     public function send()

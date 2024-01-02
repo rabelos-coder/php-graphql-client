@@ -116,16 +116,13 @@ mutation ($file: Upload!){
 }
 GQL;
 
-$files = $_FILES;
-$uploaded = [];
+$files = $_FILES[0];
+$uploaded =  [
+    'fileName' => $file['name'],
+    'mimeType' => $file['type'],
+    'filePath' => $file['tmp_name'],
+];
 
-foreach ($files as $file) {
-    $uploaded[] = [
-        'fileName' => $file['name'],
-        'mimeType' => $file['type'],
-        'filePath' => $file['tmp_name'],
-    ];
-}
 
 $variables = [
     'file' => null,
@@ -133,7 +130,7 @@ $variables = [
 
 /** @var \RabelosCoder\GraphQL\Client $client */
 $consumer = $client->identifier('file')
-            ->attachments($uploaded)
+            ->attachment($uploaded)
             ->query($mutation, $variables);
 
 try {
