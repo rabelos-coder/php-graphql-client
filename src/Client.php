@@ -63,8 +63,8 @@ class Client
      * Client constructor.
      *
      * @param string $endpointUrl
-     * @param array $options
-     * @param array $headers
+     * @param array  $options
+     * @param array  $headers
      */
     public function __construct(
         string $endpointUrl,
@@ -143,8 +143,8 @@ class Client
             $this->body = [
                 'json' => [
                     'query' => $query,
-                    'variables' => $variables ?? []
-                ]
+                    'variables' => $variables ?? [],
+                ],
             ];
         }
         return $this;
@@ -168,7 +168,7 @@ class Client
         } elseif (is_array($this->body)) {
             try {
                 $this->httpHeaders = array_merge($this->httpHeaders, [
-                    'Content-Type' => 'application/json'
+                    'Content-Type' => 'application/json',
                 ]);
                 $response = $this->httpClient->post($this->endpointUrl, array_merge($this->body, $this->httpHeaders, $this->options));
                 $responseData = json_decode($response->getBody()->getContents(), true);

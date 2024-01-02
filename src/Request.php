@@ -9,4 +9,6 @@ use GuzzleHttp\Psr7\Request as GuzzleRequest;
  *
  * @package GraphQL
  */
-class Request extends GuzzleRequest {}
+class Request extends GuzzleRequest
+{
+}
