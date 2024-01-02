@@ -116,7 +116,7 @@ mutation ($file: Upload!){
 }
 GQL;
 
-$file = $_FILES[0];
+$file = $_FILES['fieldName'];
 $uploaded =  [
     'fileName' => $file['name'],
     'mimeType' => $file['type'],
