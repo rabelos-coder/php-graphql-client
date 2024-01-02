@@ -98,7 +98,7 @@ class Client
 
     public function attachments(array $files = []): self
     {
-        if (!empty($this->fieldIdentifier) || !is_string($this->fieldIdentifier)) {
+        if (empty($this->fieldIdentifier) || !is_string($this->fieldIdentifier)) {
             throw new Exception('File field identifier not set.');
         }
         $map = "";
