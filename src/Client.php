@@ -90,7 +90,7 @@ class Client
         if (!is_string($field)) {
             throw new Exception('File field identifier must me a string.');
         }
-        $this->fieldIdentifier = $field;
+        $this->fieldIdentifier = "variables." . $field;
         return $this;
     }
 
