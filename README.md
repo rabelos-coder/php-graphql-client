@@ -154,7 +154,7 @@ mutation ($files: [Upload!]!){
 }
 GQL;
 
-$files = $_FILES;
+$files = $_FILES['fieldName']; // Remember that form field input name must contains [] at the end and the property multiple setted.
 $uploaded = [];
 
 foreach ($files as $file) {
