@@ -42,12 +42,13 @@ class ContentBuilder
     public function build(): string
     {
         $data = '';
+        $eol = "\r\n";
         $this->delimiter = '-------------' . $this->boundary;
         if (is_array($this->fields) && count($this->fields)) {
             foreach ($this->fields as $name => $content) {
-                $data .= "--" . $this->delimiter . PHP_EOL
-                    . 'Content-Disposition: form-data; name="' . $name . "\"" . PHP_EOL . PHP_EOL
-                    . $content . PHP_EOL;
+                $data .= "--" . $this->delimiter . $eol
+                    . 'Content-Disposition: form-data; name="' . $name . "\"" . $eol . $eol
+                    . $content . $eol;
             }
         }
         if (is_array($this->files) && count($this->files)) {
@@ -55,15 +56,15 @@ class ContentBuilder
                 $name = $file['fileName'];
                 $mimeType = $file['mimeType'];
                 $contents = file_get_contents($file['filePath']);
-                $data .= "--" . $this->delimiter . PHP_EOL
-                    . 'Content-Disposition: form-data; name="' . $index . '"; filename="' . $name . '"' . PHP_EOL
-                    . 'Content-Type: ' . $mimeType . PHP_EOL
-                    . 'Content-Transfer-Encoding: binary' . PHP_EOL;
-                $data .= PHP_EOL;
-                $data .= $contents . PHP_EOL;
+                $data .= "--" . $this->delimiter . $eol
+                    . 'Content-Disposition: form-data; name="' . $index . '"; filename="' . $name . '"' . $eol
+                    . 'Content-Type: ' . $mimeType . $eol
+                    . 'Content-Transfer-Encoding: binary' . $eol;
+                $data .= $eol;
+                $data .= $contents . $eol;
             }
         }
-        $data .= "--" . $this->delimiter . "--" . PHP_EOL;
+        $data .= "--" . $this->delimiter . "--" . $eol;
         return $data;
     }
 }

@@ -119,9 +119,9 @@ class Client
                 if (!file_exists($file['filePath'])) {
                     throw new Exception('File not found.');
                 }
-                $map .= '"' . $index . '": [' . $this->fieldIdentifier . '".' . $index . '"], ';
+                $map .= '"' . $index . '": ["' . $this->fieldIdentifier . '.' . $index . '"], ';
             }
-            $this->fieldsMap = $map;
+            $this->fieldsMap = '{' . substr($map, 0, strlen($map) - 2) . '}';
             $this->files = $files;
         } else {
             $this->files = [];
@@ -134,7 +134,7 @@ class Client
         if ((is_array($variables) && count($variables)) && count($this->files)) {
             $fields = [
                 'operations' => json_encode(['query' => $query, 'variables' => $variables]),
-                'map' => '{ ' . substr($this->fieldsMap, 0, strlen($this->fieldsMap) - 2) . ' }',
+                'map' => $this->fieldsMap,
             ];
             $this->boundary = uniqid();
             $builder = new ContentBuilder($this->boundary, $fields, $this->files);
@@ -157,7 +157,7 @@ class Client
             $this->httpHeaders = array_merge($this->httpHeaders, [
                 "Content-Type" => 'multipart/form-data; boundary=' . $delimiter,
             ]);
-            $request = new Request('POST', $this->endpointUrl, array_merge($this->httpHeaders, $this->options), $this->body);
+            $request = new Request('POST', $this->endpointUrl, $this->httpHeaders, $this->body);
             try {
                 $response = $this->httpClient->send($request);
                 $responseData = json_decode($response->getBody()->getContents(), true);
