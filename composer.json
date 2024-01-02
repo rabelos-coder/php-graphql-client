@@ -1,6 +1,7 @@
 {
   "name": "rabelos-coder/php-graphql-client",
   "description": "A PHP library that simplifies the process of interacting with GraphQL API's by providing simple client.",
+  "version": "1.0.12",
   "type": "library",
   "license": "MIT",
   "keywords": [
