@@ -12,7 +12,7 @@ use GuzzleHttp\Psr7\Request;
  *
  * @package GraphQL
  */
-class Clients
+class Client
 {
     /**
      * @var string
