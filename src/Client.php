@@ -4,6 +4,7 @@ namespace RabelosCoder\GraphQL;
 
 use Exception;
 use GuzzleHttp\Client as GuzzleClient;
+use GuzzleHttp\Exception\ClientException;
 use GuzzleHttp\Exception\RequestException;
 use GuzzleHttp\Psr7\Request;
 
@@ -23,6 +24,11 @@ class Client
      * @var GuzzleClient
      */
     protected GuzzleClient $httpClient;
+
+    /**
+     * @var Request
+     */
+    protected Request $request;
 
     /**
      * @var ContentBuilder
@@ -191,13 +197,21 @@ class Client
             ];
             $this->builder->addFields($fields);
             $this->body = $this->builder->build();
+            $this->httpHeaders = array_merge($this->httpHeaders, [
+                'Accept' => 'application/json',
+                "Content-Type" => 'multipart/form-data; boundary=' . $this->builder->getDelimiter(),
+            ]);
+            $this->setRequest($this->body);
         } else {
             $this->body = [
-                'json' => [
-                    'query' => $query,
-                    'variables' => $variables ?? [],
-                ],
+                'query' => $query,
+                'variables' => $variables ?? [],
             ];
+            $this->httpHeaders = array_merge($this->httpHeaders, [
+                'Accept' => 'application/json',
+                'Content-Type' => 'application/json',
+            ]);
+            $this->setRequest(json_encode($this->body));
         }
         return $this;
     }
@@ -207,30 +221,33 @@ class Client
         return $this->body;
     }
 
+    private function setRequest($body)
+    {
+        $this->request = new Request('POST', $this->endpointUrl, $this->httpHeaders, $body);
+    }
+
+    public function getRequest()
+    {
+        return $this->request;
+    }
+
     public function send()
     {
         if (is_string($this->body)) {
-            $this->httpHeaders = array_merge($this->httpHeaders, [
-                "Content-Type" => 'multipart/form-data; boundary=' . $this->builder->getDelimiter(),
-            ]);
-            $request = new Request('POST', $this->endpointUrl, $this->httpHeaders, $this->body);
             try {
-                $response = $this->httpClient->send($request);
+                $response = $this->httpClient->send($this->request);
                 $responseData = json_decode($response->getBody()->getContents(), true);
                 return $responseData;
             } catch (RequestException $e) {
-                throw new Exception($e->getMessage(), $e->getCode(), $e);
+                throw new RequestException($e->getMessage(), $this->request, null, $e);
             }
         } elseif (is_array($this->body)) {
             try {
-                $this->httpHeaders = array_merge($this->httpHeaders, [
-                    'Content-Type' => 'application/json',
-                ]);
-                $response = $this->httpClient->post($this->endpointUrl, array_merge($this->body, $this->httpHeaders, $this->options));
+                $response = $this->httpClient->send($this->request);
                 $responseData = json_decode($response->getBody()->getContents(), true);
                 return $responseData;
             } catch (RequestException $e) {
-                throw new Exception($e->getMessage(), $e->getCode(), $e);
+                throw new RequestException($e->getMessage(), $this->request, null, $e);
             }
         }
         throw new Exception('Imcompatible body while trying to send request.');
