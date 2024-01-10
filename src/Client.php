@@ -236,7 +236,7 @@ class Client
         if (is_string($this->body)) {
             try {
                 $response = $this->httpClient->send($this->request);
-                $responseData = json_decode($response->getBody()->getContents(), true);
+                $responseData = json_decode($response->getBody()->getContents());
                 return $responseData;
             } catch (RequestException $e) {
                 throw new RequestException($e->getMessage(), $this->request, null, $e);
@@ -244,7 +244,7 @@ class Client
         } elseif (is_array($this->body)) {
             try {
                 $response = $this->httpClient->send($this->request);
-                $responseData = json_decode($response->getBody()->getContents(), true);
+                $responseData = json_decode($response->getBody()->getContents());
                 return $responseData;
             } catch (RequestException $e) {
                 throw new RequestException($e->getMessage(), $this->request, null, $e);
