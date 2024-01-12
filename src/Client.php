@@ -153,65 +153,80 @@ class Client
 
     public function attachment($file): self
     {
-        $map = "";
-        if (is_array($file)) {
-            $this->validadeFileArguments($file, $this->fileIdentField);
-            $map .= '"' . preg_replace('/\W+/m', '_', $this->fileIdentField) . '":["' . $this->fileIdentField . '"],';
-            $this->fieldsMap .= $map;
-            $this->file = $file;
-        } else {
-            $this->file = null;
+        try {
+            $map = "";
+            $file = json_decode(json_encode($file), true);
+            if (is_array($file)) {
+                $this->validadeFileArguments($file, $this->fileIdentField);
+                $map .= '"' . preg_replace('/\W+/m', '_', $this->fileIdentField) . '":["' . $this->fileIdentField . '"],';
+                $this->fieldsMap .= $map;
+                $this->file = $file;
+            } else {
+                $this->file = null;
+            }
+        } catch (Exception $e) {
+            throw new Exception($e->getMessage());
         }
         return $this;
     }
 
     public function attachments(array $files = []): self
     {
-        $map = "";
-        if (is_array($files) && count($files)) {
-            foreach($files as $file) {
-                $this->validadeFileArguments($file, $this->fileIdentFields);
-                $map .= '"' . $this->mapIndex . '":["' . $this->fileIdentFields . '.' . $this->mapIndex . '"],';
-                $this->mapIndex++;
+        try {
+            $map = "";
+            $files = json_decode(json_encode($files), true);
+            if (is_array($files) && count($files)) {
+                foreach($files as $file) {
+                    $this->validadeFileArguments($file, $this->fileIdentFields);
+                    $map .= '"' . $this->mapIndex . '":["' . $this->fileIdentFields . '.' . $this->mapIndex . '"],';
+                    $this->mapIndex++;
+                }
+                $this->fieldsMap .= $map;
+                $this->files = $files;
+            } else {
+                $this->files = null;
             }
-            $this->fieldsMap .= $map;
-            $this->files = $files;
-        } else {
-            $this->files = null;
+        } catch (Exception $e) {
+            throw new Exception($e->getMessage());
         }
         return $this;
     }
 
-    public function query(string $query, array $variables = [])
+    public function query(string $query, $variables = [])
     {
-        if (is_array($this->file) || is_array($this->files)) {
-            if (is_array($this->file)) {
-                $this->builder->addFiles([$this->file], preg_replace('/\W+/m', '_', $this->fileIdentField));
+        try {
+            $variables = json_decode(json_encode($variables));
+            if (is_array($this->file) || is_array($this->files)) {
+                if (is_array($this->file)) {
+                    $this->builder->addFiles([$this->file], preg_replace('/\W+/m', '_', $this->fileIdentField));
+                }
+                if (is_array($this->files)) {
+                    $this->builder->addFiles($this->files);
+                }
+                $fields = [
+                    'operations' => json_encode(['query' => $query, 'variables' => $variables]),
+                    'map' => '{' . substr($this->fieldsMap, 0, strlen($this->fieldsMap) - 1) . '}',
+                ];
+                $this->builder->addFields($fields);
+                $this->body = $this->builder->build();
+                $this->httpHeaders = array_merge($this->httpHeaders, [
+                    'Accept' => 'application/json',
+                    "Content-Type" => 'multipart/form-data; boundary=' . $this->builder->getDelimiter(),
+                ]);
+                $this->setRequest($this->body);
+            } else {
+                $this->body = [
+                    'query' => $query,
+                    'variables' => $variables ?? [],
+                ];
+                $this->httpHeaders = array_merge($this->httpHeaders, [
+                    'Accept' => 'application/json',
+                    'Content-Type' => 'application/json',
+                ]);
+                $this->setRequest(json_encode($this->body));
             }
-            if (is_array($this->files)) {
-                $this->builder->addFiles($this->files);
-            }
-            $fields = [
-                'operations' => json_encode(['query' => $query, 'variables' => $variables]),
-                'map' => '{' . substr($this->fieldsMap, 0, strlen($this->fieldsMap) - 1) . '}',
-            ];
-            $this->builder->addFields($fields);
-            $this->body = $this->builder->build();
-            $this->httpHeaders = array_merge($this->httpHeaders, [
-                'Accept' => 'application/json',
-                "Content-Type" => 'multipart/form-data; boundary=' . $this->builder->getDelimiter(),
-            ]);
-            $this->setRequest($this->body);
-        } else {
-            $this->body = [
-                'query' => $query,
-                'variables' => $variables ?? [],
-            ];
-            $this->httpHeaders = array_merge($this->httpHeaders, [
-                'Accept' => 'application/json',
-                'Content-Type' => 'application/json',
-            ]);
-            $this->setRequest(json_encode($this->body));
+        } catch (Exception $e) {
+            throw new Exception($e->getMessage());
         }
         return $this;
     }
