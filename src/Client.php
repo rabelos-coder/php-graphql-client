@@ -192,10 +192,10 @@ class Client
         return $this;
     }
 
-    public function query(string $query, $variables = [])
+    public function query(string $query, $variables)
     {
         try {
-            $variables = json_decode(json_encode($variables));
+            $variables = json_decode(json_encode($variables), true);
             if (is_array($this->file) || is_array($this->files)) {
                 if (is_array($this->file)) {
                     $this->builder->addFiles([$this->file], preg_replace('/\W+/m', '_', $this->fileIdentField));
