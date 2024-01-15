@@ -76,6 +76,11 @@ class Client
     protected $fileIdentFields;
 
     /**
+     * @var array
+     */
+    protected $fileIdentAttachFields;
+
+    /**
      * @var string|array
      */
     protected $body;
@@ -100,15 +105,16 @@ class Client
         );
         unset($options['headers']);
 
-        $this->file             = null;
-        $this->files            = null;
-        $this->fileIdentField   = '';
-        $this->fileIdentFields  = '';
-        $this->options          = $options;
-        $this->endpointUrl      = $endpointUrl;
-        $this->httpClient       = new GuzzleClient($options);
-        $this->httpHeaders      = $httpHeaders;
-        $this->builder          = new ContentBuilder();
+        $this->file                     = null;
+        $this->files                    = null;
+        $this->fileIdentField           = '';
+        $this->fileIdentFields          = '';
+        $this->fileIdentAttachFields    = [];
+        $this->options                  = $options;
+        $this->endpointUrl              = $endpointUrl;
+        $this->httpClient               = new GuzzleClient($options);
+        $this->httpHeaders              = $httpHeaders;
+        $this->builder                  = new ContentBuilder();
     }
 
     public function fileField(string $field): self
@@ -126,6 +132,22 @@ class Client
             throw new Exception('File field identifier must me a string.');
         }
         $this->fileIdentFields = "variables." . $field;
+        return $this;
+    }
+
+    public function attachmentsField(string $field, int $total): self
+    {
+        if (!is_string($field)) {
+            throw new Exception('File field identifier must me a string.');
+        }
+
+        $fields = [];
+        for ($i = 0; $i < $total; $i++) {
+            $fields[] = "variables." . str_replace('*', $i, $field);
+        }
+
+        $this->fileIdentAttachFields = $fields;
+
         return $this;
     }
 
@@ -177,9 +199,15 @@ class Client
             $files = json_decode(json_encode($files), true);
             if (is_array($files) && count($files)) {
                 foreach($files as $file) {
-                    $this->validadeFileArguments($file, $this->fileIdentFields);
-                    $map .= '"' . $this->mapIndex . '":["' . $this->fileIdentFields . '.' . $this->mapIndex . '"],';
-                    $this->mapIndex++;
+                    if ($this->fileIdentFields) {
+                        $this->validadeFileArguments($file, $this->fileIdentFields);
+                        $map .= '"' . $this->mapIndex . '":["' . $this->fileIdentFields . '.' . $this->mapIndex . '"],';
+                        $this->mapIndex++;
+                    } elseif (count($this->fileIdentAttachFields)) {
+                        $this->validadeFileArguments($file, $this->fileIdentAttachFields[$this->mapIndex]);
+                        $map .= '"' . $this->mapIndex . '":["' . $this->fileIdentAttachFields[$this->mapIndex] . '"],';
+                        $this->mapIndex++;
+                    }
                 }
                 $this->fieldsMap .= $map;
                 $this->files = $files;
