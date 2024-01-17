@@ -5,7 +5,6 @@ namespace RabelosCoder\GraphQL;
 use Exception;
 use GuzzleHttp\Client as GuzzleClient;
 use GuzzleHttp\Exception\ClientException;
-use GuzzleHttp\Exception\RequestException;
 use GuzzleHttp\Psr7\Request;
 
 /**
@@ -187,7 +186,7 @@ class Client
                 $this->file = null;
             }
         } catch (Exception $e) {
-            throw new Exception($e->getMessage());
+            throw new GraphQLException($e->getMessage(), $e->getCode(), $e);
         }
         return $this;
     }
@@ -215,7 +214,7 @@ class Client
                 $this->files = null;
             }
         } catch (Exception $e) {
-            throw new Exception($e->getMessage());
+            throw new GraphQLException($e->getMessage(), $e->getCode(), $e);
         }
         return $this;
     }
@@ -254,7 +253,7 @@ class Client
                 $this->setRequest(json_encode($this->body));
             }
         } catch (Exception $e) {
-            throw new Exception($e->getMessage());
+            throw new GraphQLException($e->getMessage(), $e->getCode(), $e);
         }
         return $this;
     }
@@ -280,19 +279,27 @@ class Client
             try {
                 $response = $this->httpClient->send($this->request);
                 $responseData = json_decode($response->getBody()->getContents());
+                if ((!isset($responseData->data) || !$responseData->data) && isset($responseData->errors[0])) {
+                    $error = $responseData->errors[0];
+                    throw new ClientException($error->message, $this->request, $response);
+                }
                 return $responseData;
-            } catch (RequestException $e) {
-                throw new RequestException($e->getMessage(), $this->request, null, $e);
+            } catch (ClientException $e) {
+                throw new GraphQLException($e->getMessage(), $e->getCode(), $e);
             }
         } elseif (is_array($this->body)) {
             try {
                 $response = $this->httpClient->send($this->request);
                 $responseData = json_decode($response->getBody()->getContents());
+                if ((!isset($responseData->data) || !$responseData->data) && isset($responseData->errors[0])) {
+                    $error = $responseData->errors[0];
+                    throw new ClientException($error->message, $this->request, $response);
+                }
                 return $responseData;
-            } catch (RequestException $e) {
-                throw new RequestException($e->getMessage(), $this->request, null, $e);
+            } catch (ClientException $e) {
+                throw new GraphQLException($e->getMessage(), $e->getCode(), $e);
             }
         }
-        throw new Exception('Imcompatible body while trying to send request.');
+        throw new GraphQLException('Imcompatible body while trying to send request.', 400);
     }
 }
