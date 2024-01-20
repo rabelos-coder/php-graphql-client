@@ -232,9 +232,9 @@ class Client
                 }
                 preg_match_all('/(mutation|query|subscription)\s(.[a-zA-Z0-9]+)/m', trim($query), $matches, PREG_SET_ORDER, 0);
 
-                if (count($matches) && count($matches) === 3) {
+                if (count($matches)) {
                     $fields = [
-                        'operations' => json_encode(['operationName' => $matches[2], 'variables' => $variables, 'query' => trim($query)]),
+                        'operations' => json_encode(['operationName' => isset($matches[0][2]) ? $matches[0][2] : null, 'variables' => $variables, 'query' => trim($query)]),
                         'map' => '{' . substr($this->fieldsMap, 0, strlen($this->fieldsMap) - 1) . '}',
                     ];
                 } else {
@@ -254,9 +254,9 @@ class Client
             } else {
                 preg_match_all('/(mutation|query|subscription)\s(.[a-zA-Z0-9]+)/m', trim($query), $matches, PREG_SET_ORDER, 0);
 
-                if (count($matches) && count($matches) === 3) {
+                if (count($matches)) {
                     $this->body = [
-                        'operationName' => $matches[2],
+                        'operationName' => isset($matches[0][2]) ? $matches[0][2] : null,
                         'variables' => $variables ?? [],
                         'query' => trim($query),
                     ];
