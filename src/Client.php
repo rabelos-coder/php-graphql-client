@@ -230,10 +230,20 @@ class Client
                 if (is_array($this->files)) {
                     $this->builder->addFiles($this->files);
                 }
-                $fields = [
-                    'operations' => json_encode(['query' => $query, 'variables' => $variables]),
-                    'map' => '{' . substr($this->fieldsMap, 0, strlen($this->fieldsMap) - 1) . '}',
-                ];
+                preg_match_all('/(mutation|query|subscription)\s(.[a-zA-Z0-9]+)/m', trim($query), $matches, PREG_SET_ORDER, 0);
+
+                if (count($matches) && count($matches) === 3) {
+                    $fields = [
+                        'operations' => json_encode(['operationName' => $matches[2], 'variables' => $variables, 'query' => trim($query)]),
+                        'map' => '{' . substr($this->fieldsMap, 0, strlen($this->fieldsMap) - 1) . '}',
+                    ];
+                } else {
+                    $fields = [
+                        'operations' => json_encode(['variables' => $variables, 'query' => trim($query)]),
+                        'map' => '{' . substr($this->fieldsMap, 0, strlen($this->fieldsMap) - 1) . '}',
+                    ];
+                }
+
                 $this->builder->addFields($fields);
                 $this->body = $this->builder->build();
                 $this->httpHeaders = array_merge($this->httpHeaders, [
@@ -242,10 +252,21 @@ class Client
                 ]);
                 $this->setRequest($this->body);
             } else {
-                $this->body = [
-                    'query' => $query,
-                    'variables' => $variables ?? [],
-                ];
+                preg_match_all('/(mutation|query|subscription)\s(.[a-zA-Z0-9]+)/m', trim($query), $matches, PREG_SET_ORDER, 0);
+
+                if (count($matches) && count($matches) === 3) {
+                    $this->body = [
+                        'operationName' => $matches[2],
+                        'variables' => $variables ?? [],
+                        'query' => trim($query),
+                    ];
+                } else {
+                    $this->body = [
+                        'variables' => $variables ?? [],
+                        'query' => trim($query),
+                    ];
+                }
+
                 $this->httpHeaders = array_merge($this->httpHeaders, [
                     'Accept' => 'application/json',
                     'Content-Type' => 'application/json',
